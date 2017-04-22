@@ -6,6 +6,8 @@ defmodule Jsox.Parser do
   https://www.ecma-international.org/publications/standards/Ecma-404.htm
   """
 
+  alias Jsox.SyntaxError
+
   @type json :: map | list | String.t | integer | float | true | false | nil
 
   @digits '0123456789'
@@ -16,7 +18,7 @@ defmodule Jsox.Parser do
 
   @spec parse(iodata) :: {:ok, json} | {:error, String.t}
   def parse(iodata) do
-    {:ok, parse(:start, iodata, 0, 0)}
+    {:ok, parse(:start, iodata, 1, 0)}
   end
 
   defp parse(:start, <<char>> <> iodata, line, column)
@@ -26,6 +28,8 @@ defmodule Jsox.Parser do
   defp parse(:number, <<char>> <> iodata, line, column, chars)
     when char in @digits,
     do: parse(:number, iodata, line, column + 1, [char|chars])
+  defp parse(:number, _iodata, line, column, [@minus_sigun]),
+    do: raise SyntaxError, line: line, column: column
   defp parse(:number, _iodata, _line, _column, chars),
     do: chars
         |> Enum.reverse

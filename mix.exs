@@ -2,12 +2,19 @@ defmodule Jsox.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :jsox,
-     version: "0.1.0",
-     elixir: "~> 1.4",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     deps: deps()]
+    [
+      app: :jsox,
+      version: "0.1.0",
+      elixir: "~> 1.4",
+      build_embedded: Mix.env == :prod,
+      start_permanent: Mix.env == :prod,
+      deps: deps(),
+
+      # Docs
+      name: "Jsox",
+      source_url: "https://github.com/hrzndhrn/jsox",
+      docs: [main: "Jsox"]
+    ]
   end
 
   # Configuration for the OTP application
@@ -29,7 +36,8 @@ defmodule Jsox.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:credo, "~> 0.7", only: [:dev, :test]}
+      {:credo, "~> 0.7", only: [:dev, :test]},
+      {:ex_doc, "~> 0.14", only: :dev, runtime: false}
     ]
   end
 end

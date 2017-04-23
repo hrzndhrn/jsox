@@ -19,10 +19,10 @@ defmodule Jsox.Parser do
 
   @spec parse(iodata) :: {:ok, json} | {:error, String.t}
   def parse(iodata) do
-    {:ok, parse(:start, iodata, 1, 0)}
+    {:ok, parse(:json, iodata, 1, 0)}
   end
 
-  defp parse(:start, <<char>> <> iodata, line, column)
+  defp parse(:json, <<char>> <> iodata, line, column)
     when char == @minus_sigun or char in @digits,
     do: parse(:number, iodata, line, column + 1, [char])
 

@@ -12,6 +12,7 @@ defmodule Jsox.Parser do
 
   @digits '0123456789'
   @minus_sigun ?-
+  @full_stop ?.
   #@digit_1_to_9 '123456789'
   #@whitespace '\s\r\t'
   #@new_line '\n'
@@ -28,6 +29,10 @@ defmodule Jsox.Parser do
   defp parse(:number, <<char>> <> iodata, line, column, chars)
     when char in @digits,
     do: parse(:number, iodata, line, column + 1, [char|chars])
+  defp parse(:number, <<@full_stop>> <> _iodata, line, column, [@minus_sigun]),
+    do: raise SyntaxError, line: line, column: column
+  defp parse(:number, <<@full_stop>> <> iodata, line, column, chars),
+    do: parse(:float, iodata, line, column + 1, [@full_stop|chars])
   defp parse(:number, _iodata, line, column, [@minus_sigun]),
     do: raise SyntaxError, line: line, column: column
   defp parse(:number, _iodata, _line, _column, chars),
@@ -36,5 +41,13 @@ defmodule Jsox.Parser do
         |> IO.iodata_to_binary
         |> String.to_integer
 
+  defp parse(:float, <<char>> <> iodata, line, column, chars)
+    when char in @digits,
+    do: parse(:float, iodata, line, column + 1, [char|chars])
+  defp parse(:float, _iodata, _line, _column, chars),
+    do: chars
+        |> Enum.reverse
+        |> IO.iodata_to_binary
+        |> String.to_float
 
 end

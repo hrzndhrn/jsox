@@ -4,8 +4,6 @@ defmodule Jsox.ParserTest do
 
   import Jsox.Parser
 
-  alias Jsox.SyntaxError
-
   test "parsing zero float" do
     assert parse("0.0") === {:ok, 0.0}
   end
@@ -45,18 +43,15 @@ defmodule Jsox.ParserTest do
   end
 
   test "parsing '-.' raise an exception" do
-    assert_raise SyntaxError, "Syntax error on line 1 at column 1",
-      fn -> parse("-.") end
+    assert parse("-.") === {:error, :number, 1}
   end
 
   test "parsing '1e' raise an exception" do
-    assert_raise SyntaxError, "Syntax error on line 1 at column 2",
-      fn -> parse("1e") end
+    assert parse("1e") === {:error, :exponential, 2}
   end
 
   test "parsing '1e-' raise an exception" do
-    assert_raise SyntaxError, "Syntax error on line 1 at column 3",
-      fn -> parse("1e-") end
+    assert parse("1e-") === {:error, :exponential, 3}
   end
 
 end

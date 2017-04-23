@@ -4,8 +4,6 @@ defmodule Jsox.ParserTest.StringTest do
 
   import Jsox.Parser
 
-  alias Jsox.SyntaxError
-
   defmacro sigil_q({:<<>>, _, [binary]}, [])
     when is_binary(binary),
     do: unquote(~s(")) <> binary <> unquote(~s("))
@@ -42,13 +40,12 @@ defmodule Jsox.ParserTest.StringTest do
     assert parse(~q(\u2936\u2936)) == {:ok, ~s(⤶⤶)}
   end
 
-	test "parsing surrogate pairs" do
+  test "parsing surrogate pairs" do
     assert parse(~s("\\uD834\\uDD1E")) == {:ok, "𝄞"}
-	end
+  end
 
   test "parsing invalid escape sequence raise an exception" do
-    assert_raise SyntaxError, "Syntax error on line 1 at column 1",
-      fn -> parse(~q(\x)) end
+    assert parse(~q(\x)) == {:error, :string, 1}
   end
 
 end

@@ -4,8 +4,6 @@ defmodule Jsox.ParserTest.NumberTest do
 
   import Jsox.Parser
 
-  alias Jsox.SyntaxError
-
   test "parsing zero" do
     assert parse("0") === {:ok, 0}
   end
@@ -24,8 +22,7 @@ defmodule Jsox.ParserTest.NumberTest do
 
 
   test "parsing '-' raise an exception" do
-    assert_raise SyntaxError, "Syntax error on line 1 at column 1",
-      fn -> parse("-") end
+    assert parse("-") === {:error, :number, 1}
   end
 
 end

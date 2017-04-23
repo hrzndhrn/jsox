@@ -8,8 +8,6 @@ defmodule Jsox.Parser do
 
   use Bitwise
 
-  alias Jsox.SyntaxError
-
   @type json :: map | list | String.t | integer | float | true | false | nil
 
   @digits '0123456789'
@@ -41,7 +39,11 @@ defmodule Jsox.Parser do
 
   @spec parse(iodata) :: {:ok, json} | {:error, String.t}
   def parse(iodata) do
-    {:ok, parse(:json, iodata, 1, 0)}
+    try do
+      {:ok, parse(:json, iodata, 1, 0)}
+    catch
+      error -> error
+    end
   end
 
   defp parse(:json, <<char>> <> iodata, line, column)
@@ -53,18 +55,18 @@ defmodule Jsox.Parser do
   defp parse(:number, <<char>> <> iodata, line, column, chars)
     when char in @digits,
     do: parse(:number, iodata, line, column + 1, [char|chars])
-  defp parse(:number, <<@full_stop>> <> _iodata, line, column, [@minus_sign]),
-    do: raise SyntaxError, line: line, column: column
+  defp parse(:number, <<@full_stop>> <> _iodata, _line, column, [@minus_sign]),
+    do: throw {:error, :number, column}
   defp parse(:number, <<@full_stop>> <> iodata, line, column, chars),
     do: parse(:float, iodata, line, column + 1, [@full_stop|chars])
-  defp parse(:number, <<char>> <> _iodata, line, column, [@minus_sign])
+  defp parse(:number, <<char>> <> _iodata, _line, column, [@minus_sign])
     when char in @exps,
-    do: raise SyntaxError, line: line, column: column
+    do: throw {:error, :number, column}
   defp parse(:number, <<char>> <> iodata, line, column, chars)
     when char in @exps,
     do: parse(:exponential, iodata, line, column + 1, [@exp|['.0'|chars]])
-  defp parse(:number, _iodata, line, column, [@minus_sign]),
-    do: raise SyntaxError, line: line, column: column
+  defp parse(:number, _iodata, _line, column, [@minus_sign]),
+    do: throw {:error, :number, column}
   defp parse(:number, _iodata, _line, _column, chars),
     do: chars
         |> Enum.reverse
@@ -76,19 +78,19 @@ defmodule Jsox.Parser do
   defp parse(:exponential, <<char>> <> iodata, line, column, chars)
     when char in @digits,
     do: parse(:exponential, iodata, line, column + 1, [char|chars])
-  defp parse(:exponential, _iodata, line, column, [@exp|_]),
-    do: raise SyntaxError, line: line, column: column
-  defp parse(:exponential, _iodata, line, column, [@minus_sign|_]),
-    do: raise SyntaxError, line: line, column: column
+  defp parse(:exponential, _iodata, _line, column, [@exp|_]),
+    do: throw {:error, :exponential, column}
+  defp parse(:exponential, _iodata, _line, column, [@minus_sign|_]),
+    do: throw {:error, :exponential, column}
   defp parse(:exponential, _iodata, _line, _column, chars),
     do: chars
         |> Enum.reverse
         |> IO.iodata_to_binary
         |> String.to_float
 
-  defp parse(:float, <<char>> <> _iodata, line, column, [@full_stop|_])
+  defp parse(:float, <<char>> <> _iodata, _line, column, [@full_stop|_])
     when char in @exps,
-    do: raise SyntaxError, line: line, column: column
+    do: throw {:error, :float, column}
   defp parse(:float, <<char>> <> iodata, line, column, chars)
     when char in @exps,
     do: parse(:exponential, iodata, line, column + 1, [@exp|chars])
@@ -121,8 +123,8 @@ defmodule Jsox.Parser do
   end
   defp parse(:string, <<@escape, @unicode, seq :: binary-size(4)>> <> iodata, line, column, chars),
     do: parse(:string, iodata, line, column + 6, [<<String.to_integer(seq, 16) :: utf8>>|chars])
-  defp parse(:string, <<@escape>> <> _iodata, line, column, _chars),
-    do: raise SyntaxError, line: line, column: column
+  defp parse(:string, <<@escape>> <> _iodata, _line, column, _chars),
+    do: throw {:error, :string, column}
   defp parse(:string, <<char>> <> iodata, line, column, chars),
     do: parse(:string, iodata, line, column, [char|chars])
 

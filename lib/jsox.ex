@@ -4,6 +4,7 @@ defmodule Jsox do
   """
 
   alias Jsox.Parser
+  alias Jsox.SyntaxError
 
   @spec parse(iodata) :: {:ok, Parser.json} | {:error, String.t}
   def parse(iodata),
@@ -14,8 +15,8 @@ defmodule Jsox do
   @spec parse!(iodata) :: Parser.json
   def parse!(iodata) do
     case parse(iodata) do
-      {:ok, value} -> value
-      {:error, msg} -> raise msg
+      {:ok, json} -> json
+      {:error, _context, pos} -> raise SyntaxError, line: 1, column: pos
     end
   end
 

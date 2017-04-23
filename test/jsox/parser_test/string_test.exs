@@ -38,7 +38,13 @@ defmodule Jsox.ParserTest.StringTest do
 
   test "parsing unicode" do
     assert parse(~q(\u2195)) == {:ok, ~s(\u2195)}
+    assert parse(~q(\u2936)) == {:ok, ~s(⤶)}
+    assert parse(~q(\u2936\u2936)) == {:ok, ~s(⤶⤶)}
   end
+
+	test "parsing surrogate pairs" do
+    assert parse(~s("\\uD834\\uDD1E")) == {:ok, "𝄞"}
+	end
 
   test "parsing invalid escape sequence raise an exception" do
     assert_raise SyntaxError, "Syntax error on line 1 at column 1",

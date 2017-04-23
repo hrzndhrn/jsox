@@ -6,6 +6,8 @@ defmodule Jsox.Parser do
   https://www.ecma-international.org/publications/standards/Ecma-404.htm
   """
 
+  use Bitwise
+
   alias Jsox.SyntaxError
 
   @type json :: map | list | String.t | integer | float | true | false | nil
@@ -32,6 +34,10 @@ defmodule Jsox.Parser do
   # @newline '\n'
   #@digit_1_to_9 '123456789'
   #@whitespace '\s\r\t'
+
+  @surrogate_a 'dD'
+  @surrogate_b1 '89abAb'
+  @surrogate_b2 'cedfCDEF'
 
   @spec parse(iodata) :: {:ok, json} | {:error, String.t}
   def parse(iodata) do
@@ -104,6 +110,15 @@ defmodule Jsox.Parser do
   defp parse(:string, <<@escape, char>> <> iodata, line, column, chars)
     when char in @escape_chars,
     do: parse(:string, iodata, line, column + 2, [Map.get(@escapes, char)|chars])
+  defp parse(:string,
+             <<@escape, @unicode, a1, b1, c1, d1, @escape, @unicode, a2, b2, c2, d2>> <> iodata,
+             line, column, chars)
+    when a1 in @surrogate_a and a2 in @surrogate_a and b1 in @surrogate_b1 and b2 in @surrogate_b2 do
+    hi = List.to_integer([a1, b1, c1, d1], 16)
+    lo = List.to_integer([a2, b2, c2, d2], 16)
+    codepoint = 0x10000 + ((hi &&& 0x03FF) <<< 10) + (lo &&& 0x03FF)
+    parse(:string, iodata, line, column + 11, [<<codepoint :: utf8>>|chars])
+  end
   defp parse(:string, <<@escape, @unicode, seq :: binary-size(4)>> <> iodata, line, column, chars),
     do: parse(:string, iodata, line, column + 6, [<<String.to_integer(seq, 16) :: utf8>>|chars])
   defp parse(:string, <<@escape>> <> _iodata, line, column, _chars),

@@ -15,9 +15,23 @@ defmodule Jsox.Parser do
   @full_stop ?.
   @exps 'eE'
   @exp ?e
+  @quotation_mark ?"
+  @escape ?\\
+  @escapes %{
+    ?\\ => '\\',
+    ?" => '\"',
+    ?n => '\n',
+    ?r => '\r',
+    ?b => '\b',
+    ?f => '\f',
+    ?t => '\t'
+  }
+  @escape_chars Map.keys(@escapes)
+  @solidus ?/
+  @unicode ?u
+  # @newline '\n'
   #@digit_1_to_9 '123456789'
   #@whitespace '\s\r\t'
-  #@new_line '\n'
 
   @spec parse(iodata) :: {:ok, json} | {:error, String.t}
   def parse(iodata) do
@@ -27,6 +41,8 @@ defmodule Jsox.Parser do
   defp parse(:json, <<char>> <> iodata, line, column)
     when char == @minus_sign or char in @digits,
     do: parse(:number, iodata, line, column + 1, [char])
+  defp parse(:json, <<@quotation_mark>> <> iodata, line, column),
+    do: parse(:string, iodata, line, column + 1, [])
 
   defp parse(:number, <<char>> <> iodata, line, column, chars)
     when char in @digits,
@@ -78,5 +94,21 @@ defmodule Jsox.Parser do
         |> Enum.reverse
         |> IO.iodata_to_binary
         |> String.to_float
+
+  defp parse(:string, <<@quotation_mark>> <> _iodata, _line, _column, chars),
+    do: chars
+        |> Enum.reverse
+        |> IO.iodata_to_binary
+  defp parse(:string, <<@escape, @solidus>> <> iodata, line, column, chars),
+    do: parse(:string, iodata, line, column + 2, [@solidus|chars])
+  defp parse(:string, <<@escape, char>> <> iodata, line, column, chars)
+    when char in @escape_chars,
+    do: parse(:string, iodata, line, column + 2, [Map.get(@escapes, char)|chars])
+  defp parse(:string, <<@escape, @unicode, seq :: binary-size(4)>> <> iodata, line, column, chars),
+    do: parse(:string, iodata, line, column + 6, [<<String.to_integer(seq, 16) :: utf8>>|chars])
+  defp parse(:string, <<@escape>> <> _iodata, line, column, _chars),
+    do: raise SyntaxError, line: line, column: column
+  defp parse(:string, <<char>> <> iodata, line, column, chars),
+    do: parse(:string, iodata, line, column, [char|chars])
 
 end

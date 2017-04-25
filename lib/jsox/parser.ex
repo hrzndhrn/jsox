@@ -29,10 +29,7 @@ defmodule Jsox.Parser do
   @escape_chars Map.keys(@escapes)
   @solidus ?/
   @unicode ?u
-  # @newline '\n'
-  #@digit_1_to_9 '123456789'
-  #@whitespace '\s\r\t'
-
+  @whitespace '\s\r\t\n'
   @surrogate_a 'dD'
   @surrogate_b1 '89abAb'
   @surrogate_b2 'cedfCDEF'
@@ -49,6 +46,9 @@ defmodule Jsox.Parser do
     do: parse(:number, iodata, pos + 1, [char])
   defp parse(:json, <<@quotation_mark>> <> iodata, pos),
     do: parse(:string, iodata, pos + 1, [])
+  defp parse(:json, <<char>> <> iodata, pos)
+    when char in @whitespace,
+    do: parse(:json, iodata, pos + 1)
 
   defp parse(:number, <<char>> <> iodata, pos, chars)
     when char in @digits,

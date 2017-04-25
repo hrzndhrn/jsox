@@ -11,6 +11,10 @@ defmodule JsoxTest do
     assert parse!("0") === 0
   end
 
+  test "skip whitespace" do
+    assert parse!("  0") === 0
+  end
+
   test "parsing invalid json" do
     assert parse("-") === {:error, :number, 1}
     assert_raise SyntaxError, "Syntax error on line 1 at column 1",

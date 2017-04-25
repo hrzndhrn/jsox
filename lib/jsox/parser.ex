@@ -33,10 +33,18 @@ defmodule Jsox.Parser do
   @surrogate_a 'dD'
   @surrogate_b1 '89abAb'
   @surrogate_b2 'cedfCDEF'
+  @left_square_bracket ?[
+  @right_square_bracket ?]
+  @comma ?,
 
   @spec parse(iodata) :: {:ok, json} | {:error, String.t}
   def parse(iodata) do
-    {:ok, parse(:json, iodata, 0)}
+    {result, iodata, pos} = parse(:json, iodata, 0)
+    if iodata =~ ~r/^\s*$/ do
+      {:ok, result}
+    else
+      {:error, :eof, pos}
+    end
   catch
     {token, pos} -> {:error, token, pos}
   end
@@ -49,6 +57,10 @@ defmodule Jsox.Parser do
   defp parse(:json, <<char>> <> iodata, pos)
     when char in @whitespace,
     do: parse(:json, iodata, pos + 1)
+  defp parse(:json, <<@left_square_bracket>> <> iodata, pos),
+    do: parse(:list, iodata, pos + 1, [])
+  defp parse(:json, iodata, pos),
+    do: throw {:json, pos}
 
   defp parse(:number, <<char>> <> iodata, pos, chars)
     when char in @digits,
@@ -65,11 +77,13 @@ defmodule Jsox.Parser do
     do: parse(:exponential, iodata, pos + 1, [@exp|['.0'|chars]])
   defp parse(:number, _iodata, pos, [@minus_sign]),
     do: throw {:number, pos}
-  defp parse(:number, _iodata, _pos, chars),
-    do: chars
-        |> Enum.reverse
-        |> IO.iodata_to_binary
-        |> String.to_integer
+  defp parse(:number, iodata, pos, chars) do
+    result = chars
+             |> Enum.reverse
+             |> IO.iodata_to_binary
+             |> String.to_integer
+    {result, iodata, pos}
+  end
 
   defp parse(:exponential, <<@minus_sign>> <> iodata, pos, [@exp|_] = chars),
     do: parse(:exponential, iodata, pos + 1, [@minus_sign|chars])
@@ -80,11 +94,13 @@ defmodule Jsox.Parser do
     do: throw {:exponential, pos}
   defp parse(:exponential, _iodata, pos, [@minus_sign|_]),
     do: throw {:exponential, pos}
-  defp parse(:exponential, _iodata, _pos, chars),
-    do: chars
+  defp parse(:exponential, iodata, pos, chars) do
+    result = chars
         |> Enum.reverse
         |> IO.iodata_to_binary
         |> String.to_float
+    {result, iodata, pos}
+  end
 
   defp parse(:float, <<char>> <> _iodata, pos, [@full_stop|_])
     when char in @exps,
@@ -95,16 +111,20 @@ defmodule Jsox.Parser do
   defp parse(:float, <<char>> <> iodata, pos, chars)
     when char in @digits,
     do: parse(:float, iodata, pos + 1, [char|chars])
-  defp parse(:float, _iodata, _pos, chars),
-    do: chars
-        |> Enum.reverse
-        |> IO.iodata_to_binary
-        |> String.to_float
+  defp parse(:float, iodata, pos, chars) do
+    result = chars
+             |> Enum.reverse
+             |> IO.iodata_to_binary
+             |> String.to_float
+    {result, iodata, pos}
+  end
 
-  defp parse(:string, <<@quotation_mark>> <> _iodata, _pos, chars),
-    do: chars
-        |> Enum.reverse
-        |> IO.iodata_to_binary
+  defp parse(:string, <<@quotation_mark>> <> iodata, pos, chars) do
+    result = chars
+             |> Enum.reverse
+             |> IO.iodata_to_binary
+    {result, iodata, pos}
+  end
   defp parse(:string, <<@escape, @solidus>> <> iodata, pos, chars),
     do: parse(:string, iodata, pos + 2, [@solidus|chars])
   defp parse(:string, <<@escape, char>> <> iodata, pos, chars)
@@ -125,5 +145,21 @@ defmodule Jsox.Parser do
     do: throw {:string, pos}
   defp parse(:string, <<char>> <> iodata, pos, chars),
     do: parse(:string, iodata, pos, [char|chars])
+
+  defp parse(:list, <<@right_square_bracket>> <> iodata, pos, list),
+    do: {Enum.reverse(list), iodata, pos + 1}
+  defp parse(:list, <<@comma>> <> _iodata, pos, []),
+    do: throw {:list, pos}
+  defp parse(:list, <<@comma>> <> iodata, pos, list) do
+    {result, iodata, pos} = parse(:json, iodata, pos + 1)
+    parse(:list, iodata, pos, [result|list])
+  end
+  defp parse(:list, <<char>> <> iodata, pos, list)
+    when char in @whitespace,
+    do: parse(:list, iodata, pos + 1, list)
+  defp parse(:list, iodata, pos, list) do
+    {result, iodata, pos} = parse(:json, iodata, pos)
+    parse(:list, iodata, pos, [result|list])
+  end
 
 end

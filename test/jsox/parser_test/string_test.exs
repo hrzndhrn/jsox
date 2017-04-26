@@ -4,48 +4,44 @@ defmodule Jsox.ParserTest.StringTest do
 
   import Jsox.Parser
 
-  defmacro sigil_q({:<<>>, _, [binary]}, [])
-    when is_binary(binary),
-    do: unquote(~s(")) <> binary <> unquote(~s("))
-
   test "parsing string" do
-    assert parse(~q(a)) === {:ok, "a"}
-    assert parse(~q(abc)) === {:ok, "abc"}
-    assert parse(~q(Hello, world!)) === {:ok, "Hello, world!"}
+    assert parse(~S("a")) === {:ok, ~s(a)}
+    assert parse(~S("abc")) === {:ok, ~s(abc)}
+    assert parse(~S("Hello, world!")) === {:ok, ~s(Hello, world!)}
   end
 
   test "parsing string with escapes" do
     # qutation mark
-    assert parse(~q(a\"b)) === {:ok, ~s(a\"b)}
+    assert parse(~S("a\"b")) === {:ok, ~s(a\"b)}
     # reverse solidus
-    assert parse(~q(\\)) === {:ok, ~s(\\)}
-    assert parse(~q(a\\b)) === {:ok, ~s(a\\b)}
+    assert parse(~S("\\")) === {:ok, ~s(\\)}
+    assert parse(~S("a\\b")) === {:ok, ~s(a\\b)}
     # solidus
-    assert parse(~q(a\/b)) === {:ok, ~s(a/b)}
+    assert parse(~S("a\/b")) === {:ok, ~s(a/b)}
     # newline
-    assert parse(~q(a\nb)) === {:ok, ~s(a\nb)}
+    assert parse(~S("a\nb")) === {:ok, ~s(a\nb)}
     # backspace
-    assert parse(~q(a\bb)) === {:ok, ~s(a\bb)}
+    assert parse(~S("a\bb")) === {:ok, ~s(a\bb)}
     # formfeed
-    assert parse(~q(a\fb)) === {:ok, ~s(a\fb)}
+    assert parse(~S("a\fb")) === {:ok, ~s(a\fb)}
     # horizontal tab
-    assert parse(~q(a\tb)) === {:ok, ~s(a\tb)}
+    assert parse(~S("a\tb")) === {:ok, ~s(a\tb)}
     # carriage return
-    assert parse(~q(a\rb)) === {:ok, ~s(a\rb)}
+    assert parse(~S("a\rb")) === {:ok, ~s(a\rb)}
   end
 
   test "parsing unicode" do
-    assert parse(~q(\u2195)) == {:ok, ~s(\u2195)}
-    assert parse(~q(\u2936)) == {:ok, ~s(⤶)}
-    assert parse(~q(\u2936\u2936)) == {:ok, ~s(⤶⤶)}
+    assert parse(~S("\u2195")) == {:ok, ~s(\u2195)}
+    assert parse(~S("\u2936")) == {:ok, ~s(⤶)}
+    assert parse(~S("\u2936\u2936")) == {:ok, ~s(⤶⤶)}
   end
 
   test "parsing surrogate pairs" do
-    assert parse(~s("\\uD834\\uDD1E")) == {:ok, "𝄞"}
+    assert parse(~S("\uD834\uDD1E")) == {:ok, ~s(𝄞)}
   end
 
   test "parsing invalid escape sequence raise an exception" do
-    assert parse(~q(\x)) == {:error, :string, 1}
+    assert parse(~S("\x")) == {:error, :string, 1}
   end
 
 end

@@ -16,7 +16,11 @@ defmodule Jsox do
   def parse!(iodata) do
     case parse(iodata) do
       {:ok, json} -> json
-      {:error, _context, pos} -> raise SyntaxError, line: 1, column: pos
+      {:error, token, pos} -> raise SyntaxError,
+                                      token: token,
+                                      iodata: iodata,
+                                      line: 1,
+                                      pos: pos
     end
   end
 

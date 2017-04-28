@@ -52,6 +52,10 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+### benchfella ###
+/bench/snapshots
+/bench/graphs
+
 ### etc ###
 
 # Sleeping files

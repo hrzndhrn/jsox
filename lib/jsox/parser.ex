@@ -35,7 +35,13 @@ defmodule Jsox.Parser do
   @surrogate_b2 'cedfCDEF'
   @left_square_bracket ?[
   @right_square_bracket ?]
+  @left_curly_bracket ?{
+  @right_curly_bracket ?}
+  @colon ?:
   @comma ?,
+  @json_true "true"
+  @json_false "false"
+  @json_null "null"
 
   @spec parse(iodata) :: {:ok, json} | {:error, String.t}
   def parse(iodata) do
@@ -59,8 +65,25 @@ defmodule Jsox.Parser do
     do: parse(:json, iodata, pos + 1)
   defp parse(:json, <<@left_square_bracket>> <> iodata, pos),
     do: parse(:list, iodata, pos + 1, [])
-  defp parse(:json, iodata, pos),
-    do: throw {:json, pos}
+  defp parse(:json, <<@left_curly_bracket>> <> iodata, pos),
+    do: parse(:map, iodata, pos + 1, [])
+  defp parse(:json, <<@json_true>> <> iodata, pos),
+    do: {true, iodata, pos + 4}
+  defp parse(:json, <<@json_false>> <> iodata, pos),
+    do: {false, iodata, pos + 5}
+  defp parse(:json, <<@json_null>> <> iodata, pos),
+    do: {nil, iodata, pos + 5}
+  defp parse(:json, _iodata, pos),
+    do: throw {:json, pos + 1}
+
+  defp parse(:key, <<char>> <> iodata, pos)
+    when char in @whitespace,
+    do: parse(:key, iodata, pos + 1)
+  defp parse(:key, <<char>> <> iodata, pos)
+    when char == @quotation_mark,
+    do: parse(:string, iodata, pos + 1, [])
+  defp parse(:key, _iodata, pos),
+    do: throw {:key, pos + 1}
 
   defp parse(:number, <<char>> <> iodata, pos, chars)
     when char in @digits,
@@ -144,7 +167,7 @@ defmodule Jsox.Parser do
   defp parse(:string, <<@escape>> <> _iodata, pos, _chars),
     do: throw {:string, pos}
   defp parse(:string, <<char>> <> iodata, pos, chars),
-    do: parse(:string, iodata, pos, [char|chars])
+    do: parse(:string, iodata, pos + 1, [char|chars])
 
   defp parse(:list, <<@right_square_bracket>> <> iodata, pos, list),
     do: {Enum.reverse(list), iodata, pos + 1}
@@ -157,9 +180,37 @@ defmodule Jsox.Parser do
   defp parse(:list, <<char>> <> iodata, pos, list)
     when char in @whitespace,
     do: parse(:list, iodata, pos + 1, list)
-  defp parse(:list, iodata, pos, list) do
+  defp parse(:list, iodata, pos, []) do
     {result, iodata, pos} = parse(:json, iodata, pos)
-    parse(:list, iodata, pos, [result|list])
+    parse(:list, iodata, pos, [result])
   end
+  defp parse(:list, _iodata, pos, _list),
+    do: throw{:list, pos}
+
+  defp parse(:map, <<@right_curly_bracket>> <> iodata, pos, list) do
+    result = for [value, key] <- Enum.chunk(list, 2), into: %{}, do: {key, value}
+    {result, iodata, pos + 1}
+  end
+  defp parse(:map, <<@comma>> <> _iodata, pos, []),
+    do: throw {:map, pos + 1}
+  defp parse(:map, <<@comma>> <> iodata, pos, list) do
+    {result, iodata, pos} = parse(:key, iodata, pos + 1)
+    parse(:map, iodata, pos + 1, [result|list])
+  end
+  defp parse(:map, <<@colon>> <> _iodata, pos, []),
+    do: throw {:map, pos + 1}
+  defp parse(:map, <<@colon>> <> iodata, pos, list) do
+    {result, iodata, pos} = parse(:json, iodata, pos + 1)
+    parse(:map, iodata, pos + 1, [result|list])
+  end
+  defp parse(:map, <<char>> <> iodata, pos, list)
+    when char in @whitespace,
+    do: parse(:map, iodata,  pos + 1, list)
+  defp parse(:map, iodata, pos, []) do
+    {result, iodata, pos} = parse(:key, iodata, pos)
+    parse(:map, iodata, pos, [result])
+  end
+  defp parse(:map, _iodata, pos, _list),
+    do: throw {:map, pos + 1}
 
 end

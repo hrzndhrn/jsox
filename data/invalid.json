@@ -1,0 +1,4 @@
+{
+  "valid" : [1, 2, "foo"], 
+  "foo" : "x", "invalid" : x 
+}

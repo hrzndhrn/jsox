@@ -37,7 +37,12 @@ defmodule Jsox.Mixfile do
   defp deps do
     [
       {:credo, "~> 0.7", only: [:dev, :test]},
-      {:ex_doc, "~> 0.14", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.14", only: :dev, runtime: false},
+      {:benchfella, "~> 0.3", only: :bench},
+      {:poison, github: "devinus/poison", only: :bench},
+      {:exjsx, github: "talentdeficit/exjsx", only: :bench},
+      {:json, github: "cblage/elixir-json", only: :bench},
+      {:jiffy, github: "davisp/jiffy", only: :bench}
     ]
   end
 end

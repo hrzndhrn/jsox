@@ -8,7 +8,6 @@ defmodule JsoxTest do
 
   @test_resources Path.join([System.cwd(), "data"])
 
-  @tag :skip
   test "parsing zero" do
     assert parse("0") === {:ok, 0}
     assert parse!("0") === 0

@@ -52,44 +52,43 @@ defmodule Jsox.Parser do
     {token, pos} -> {:error, token, pos}
   end
 
-  defp json(<<char>> <> data, pos) do
-    pos = pos + 1
-    cond do
-      char in @whitespace -> json(data, pos)
-      char == @quotation_mark -> string(data, pos, [])
-      char == @left_square_bracket -> list(data, pos, [])
-      char == @left_curly_bracket-> map(data, pos, [])
-      char == @minus_sign or char in @digits -> number(data, pos, [char])
-      char == ?t -> _true(data, pos)
-      char == ?f -> _false(data, pos)
-      char == ?n -> _null(data, pos)
-      true -> throw {:json, pos}
-    end
-  end
+  defp json(<<char>> <> data, pos)
+    when char in @whitespace,
+    do: json(data, pos + 1)
+  defp json(<<char>> <> data, pos)
+    when char == @quotation_mark,
+    do: string(data, pos + 1, [])
+  defp json(<<char>> <> data, pos)
+    when char == @left_square_bracket,
+    do: list(data, pos + 1, [])
+  defp json(<<char>> <> data, pos)
+    when char == @left_curly_bracket,
+    do: map(data, pos + 1, [])
+  defp json(<<char>> <> data, pos)
+    when char in '-0123456789',
+    do: number(data, pos + 1, [char])
+  defp json(<<"true">> <> data, pos),
+    do: {true, data, pos + 4}
+  defp json(<<"false">> <> data, pos),
+    do: {false, data, pos + 5}
+  defp json(<<"null">> <> data, pos),
+    do: {nil, data, pos + 4}
+  defp json(_data, pos),
+    do: throw {:json, pos + 1}
 
-  defp _true(<<"rue">> <> data, pos), do: {true, data, pos + 3}
-  defp _true(_data, pos), do: throw {:true, pos}
-
-  defp _false(<<"alse">> <> data, pos), do: {false, data, pos + 4}
-  defp _false(_data, pos), do: throw {:false, pos}
-
-  defp _null(<<"ull">> <> data, pos), do: {nil, data, pos + 3}
-  defp _null(_data, pos), do: throw {:null, pos}
-
-  defp key(<<char>> <> data, pos) do
-    pos = pos + 1
-    cond do
-      char in @whitespace -> key(data, pos)
-      char == @quotation_mark -> string(data, pos, [])
-      true -> throw {:key, pos}
-    end
-  end
+  defp key(<<char>> <> data, pos)
+    when char in @whitespace,
+    do: key(data, pos + 1)
+  defp key(<<char>> <> data, pos)
+    when char == @quotation_mark,
+    do: string(data, pos + 1, [])
+  defp key(_data, pos), do: throw {:key, pos}
 
   defp number(<<char>> <> data, pos, chars)
     when char in @digits,
     do: number(data, pos + 1, [char|chars])
   defp number(<<@full_stop>> <> _data, pos, [@minus_sign]),
-    do: throw {:number, pos}
+    do: throw {:number, pos + 1}
   defp number(<<@full_stop>> <> data, pos, chars),
     do: float(data, pos + 1, [@full_stop|chars])
   defp number(<<char>> <> _data, pos, [@minus_sign])

@@ -24,7 +24,7 @@ defmodule Jsox.ParserTest.MapTest do
     assert parse(~s({ : { })) === {:error, :map, 3}
     assert parse(~s( "b" : 2})) === {:error, :eof, 3}
     assert parse(~s({"a" : 1 "b" : 2})) === {:error, :map, 10}
-    assert parse(~s({"a" : 1, "b" : 2,})) === {:error, :key, 20}
+    assert parse(~s({"a" : 1, "b" : 2,})) === {:error, :key, 19}
   end
 
 end

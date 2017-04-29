@@ -43,7 +43,7 @@ defmodule Jsox.ParserTest do
   end
 
   test "parsing '-.' raise an exception" do
-    assert parse("-.") === {:error, :number, 1}
+    assert parse("-.") === {:error, :number, 2}
   end
 
   test "parsing '1e' raise an exception" do

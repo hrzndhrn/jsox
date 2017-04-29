@@ -39,9 +39,6 @@ defmodule Jsox.Parser do
   @right_curly_bracket ?}
   @colon ?:
   @comma ?,
-  @json_true "true"
-  @json_false "false"
-  @json_null "null"
 
   @spec parse(iodata) :: {:ok, json} | {:error, String.t}
   def parse(iodata) do
@@ -55,35 +52,38 @@ defmodule Jsox.Parser do
     {token, pos} -> {:error, token, pos}
   end
 
-  defp parse_json(<<char>> <> iodata, pos)
-    when char in @whitespace,
-    do: parse_json(iodata, pos + 1)
-  defp parse_json(<<char>> <> iodata, pos)
-    when char == @minus_sign or char in @digits,
-    do: parse_number(iodata, pos + 1, [char])
-  defp parse_json(<<@quotation_mark>> <> iodata, pos),
-    do: parse_string(iodata, pos + 1, [])
-  defp parse_json(<<@left_square_bracket>> <> iodata, pos),
-    do: parse_list(iodata, pos + 1, [])
-  defp parse_json(<<@left_curly_bracket>> <> iodata, pos),
-    do: parse_map(iodata, pos + 1, [])
-  defp parse_json(<<@json_true>> <> iodata, pos),
-    do: {true, iodata, pos + 4}
-  defp parse_json(<<@json_false>> <> iodata, pos),
-    do: {false, iodata, pos + 5}
-  defp parse_json(<<@json_null>> <> iodata, pos),
-    do: {nil, iodata, pos + 5}
-  defp parse_json(_iodata, pos),
-    do: throw {:json, pos + 1}
+  defp parse_json(<<char>> <> iodata, pos) do
+    pos = pos + 1
+    cond do
+      char in @whitespace -> parse_json(iodata, pos)
+      char == @quotation_mark -> parse_string(iodata, pos, [])
+      char == @left_square_bracket -> parse_list(iodata, pos, [])
+      char == @left_curly_bracket-> parse_map(iodata, pos, [])
+      char == @minus_sign or char in @digits -> parse_number(iodata, pos, [char])
+      char == ?t -> parse_true(iodata, pos)
+      char == ?f -> parse_false(iodata, pos)
+      char == ?n -> parse_null(iodata, pos)
+      true -> throw {:json, pos}
+    end
+  end
 
-  defp parse_key(<<char>> <> iodata, pos)
-    when char in @whitespace,
-    do: parse_key(iodata, pos + 1)
-  defp parse_key(<<char>> <> iodata, pos)
-    when char == @quotation_mark,
-    do: parse_string(iodata, pos + 1, [])
-  defp parse_key(_iodata, pos),
-    do: throw {:key, pos + 1}
+  defp parse_true(<<"rue">> <> iodata, pos), do: {true, iodata, pos + 3}
+  defp parse_true(_iodata, pos), do: throw {:true, pos}
+
+  defp parse_false(<<"alse">> <> iodata, pos), do: {false, iodata, pos + 4}
+  defp parse_false(_iodata, pos), do: throw {:false, pos}
+
+  defp parse_null(<<"ull">> <> iodata, pos), do: {nil, iodata, pos + 3}
+  defp parse_null(_iodata, pos), do: throw {:null, pos}
+
+  defp parse_key(<<char>> <> iodata, pos) do
+    pos = pos + 1
+    cond do
+      char in @whitespace -> parse_key(iodata, pos)
+      char == @quotation_mark -> parse_string(iodata, pos, [])
+      true -> throw {:key, pos}
+    end
+  end
 
   defp parse_number(<<char>> <> iodata, pos, chars)
     when char in @digits,

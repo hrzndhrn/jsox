@@ -23,7 +23,8 @@ defmodule Jsox.Parser do
     ?r => '\r',
     ?b => '\b',
     ?f => '\f',
-    ?t => '\t'
+    ?t => '\t',
+    ?/ => '\/'
   }
   @escape_chars Map.keys(@escapes)
   @solidus ?/
@@ -144,8 +145,8 @@ defmodule Jsox.Parser do
              |> IO.iodata_to_binary
     {result, data, pos}
   end
-  defp string(<<@escape, @solidus>> <> data, pos, chars),
-    do: string(data, pos + 2, [@solidus|chars])
+  #defp string(<<@escape, @solidus>> <> data, pos, chars),
+  #  do: string(data, pos + 2, [@solidus|chars])
   defp string(<<@escape, char>> <> data, pos, chars)
     when char in @escape_chars,
     do: string(data, pos + 2, [Map.get(@escapes, char)|chars])

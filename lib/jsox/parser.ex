@@ -14,7 +14,6 @@ defmodule Jsox.Parser do
   @minus_sign ?-
   @full_stop ?.
   @exps 'eE'
-  @exp ?e
   @quotation_mark ?"
   @escape ?\\
   @escapes %{
@@ -66,7 +65,7 @@ defmodule Jsox.Parser do
     do: map(data, pos + 1, [])
   defp json(<<char>> <> data, pos)
     when char in '-0123456789',
-    do: number(data, pos + 1, [char])
+    do: number(data, pos + 1, [char], (if char == ?-, do: :minus, else: :digit))
   defp json(<<"true">> <> data, pos),
     do: {true, data, pos + 4}
   defp json(<<"false">> <> data, pos),
@@ -82,24 +81,25 @@ defmodule Jsox.Parser do
   defp key(<<char>> <> data, pos)
     when char == @quotation_mark,
     do: string(data, pos + 1, [])
-  defp key(_data, pos), do: throw {:key, pos}
+  defp key(_data, pos),
+    do: throw {:key, pos}
 
-  defp number(<<char>> <> data, pos, chars)
+  defp number(<<char>> <> data, pos, chars, _last)
     when char in @digits,
-    do: number(data, pos + 1, [chars,char])
-  defp number(<<@full_stop>> <> _data, pos, [@minus_sign]),
+    do: number(data, pos + 1, [chars,char], :digit)
+  defp number(<<@full_stop>> <> _data, pos, _chars, :minus),
     do: throw {:number, pos + 1}
-  defp number(<<@full_stop>> <> data, pos, chars),
-    do: float(data, pos + 1, [chars, @full_stop])
-  defp number(<<char>> <> _data, pos, [@minus_sign])
+  defp number(<<@full_stop>> <> data, pos, chars, _last),
+    do: float(data, pos + 1, [chars, @full_stop], :full_stop)
+  defp number(<<char>> <> _data, pos, _chars, :minus)
     when char in @exps,
     do: throw {:number, pos}
-  defp number(<<char>> <> data, pos, chars)
+  defp number(<<char>> <> data, pos, chars, _last)
     when char in @exps,
     do: exponential(data, pos + 1, [chars, '.0e'], :exp)
-  defp number(_data, pos, [@minus_sign]),
+  defp number(_data, pos, _chars, :minus),
     do: throw {:number, pos}
-  defp number(data, pos, chars) do
+  defp number(data, pos, chars, _last) do
     result = chars
              |> IO.iodata_to_binary
              |> String.to_integer
@@ -122,16 +122,16 @@ defmodule Jsox.Parser do
     {result, data, pos}
   end
 
-  defp float(<<char>> <> _data, pos, [@full_stop|_])
+  defp float(<<char>> <> _data, pos, _chars, :full_stop)
     when char in @exps,
     do: throw {:float, pos}
-  defp float(<<char>> <> data, pos, chars)
+  defp float(<<char>> <> data, pos, chars, _last)
     when char in @exps,
     do: exponential(data, pos + 1, [chars, 'e'], :exp)
-  defp float(<<char>> <> data, pos, chars)
+  defp float(<<char>> <> data, pos, chars, _last)
     when char in @digits,
-    do: float(data, pos + 1, [chars, char])
-  defp float(data, pos, chars) do
+    do: float(data, pos + 1, [chars, char], :digit)
+  defp float(data, pos, chars, _last) do
     result = chars
              |> IO.iodata_to_binary
              |> String.to_float

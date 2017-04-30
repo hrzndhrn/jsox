@@ -11,6 +11,7 @@ defmodule Jsox.Parser do
   @type json :: map | list | String.t | integer | float | true | false | nil
 
   @digits '0123456789'
+  @whitespace '\s\r\t\n'
   @minus_sign ?-
   @full_stop ?.
   @exps 'eE'
@@ -26,9 +27,7 @@ defmodule Jsox.Parser do
     ?t => '\t',
     ?/ => '\/'
   }
-  @escape_chars Map.keys(@escapes)
-  @unicode ?u
-  @whitespace '\s\r\t\n'
+  @escape_chars [?u|Map.keys(@escapes)]
   @surrogate_a 'dD'
   @surrogate_b1 '89abAb'
   @surrogate_b2 'cedfCDEF'
@@ -144,24 +143,26 @@ defmodule Jsox.Parser do
              |> IO.iodata_to_binary
     {result, data, pos}
   end
-  defp string(<<@escape, char>> <> data, pos, chars)
-    when char in @escape_chars,
-    do: string(data, pos + 2, [Map.get(@escapes, char)|chars])
-  defp string(
-             <<@escape, @unicode, a1, b1, c1, d1, @escape, @unicode, a2, b2, c2, d2>> <> data,
-             pos, chars)
+  defp string(<<?\\, char>> <> data, pos, chars) when char in @escape_chars do
+    cond do
+      char == ?u -> unicode(data, pos + 1, chars)
+      true -> string(data, pos + 2, [Map.get(@escapes, char)|chars])
+    end
+  end
+  defp string(<<@escape>> <> _data, pos, _chars),
+    do: throw {:string, pos}
+  defp string(<<char>> <> data, pos, chars),
+    do: string(data, pos + 1, [char|chars])
+
+  defp unicode(<<a1, b1, c1, d1, ?\\, ?u, a2, b2, c2, d2>> <> data, pos, chars)
     when a1 in @surrogate_a and a2 in @surrogate_a and b1 in @surrogate_b1 and b2 in @surrogate_b2 do
     hi = List.to_integer([a1, b1, c1, d1], 16)
     lo = List.to_integer([a2, b2, c2, d2], 16)
     codepoint = 0x10000 + ((hi &&& 0x03FF) <<< 10) + (lo &&& 0x03FF)
     string(data, pos + 11, [<<codepoint :: utf8>>|chars])
   end
-  defp string(<<@escape, @unicode, seq :: binary-size(4)>> <> data, pos, chars),
+  defp unicode(<<seq :: binary-size(4)>> <> data, pos, chars),
     do: string(data, pos + 6, [<<String.to_integer(seq, 16) :: utf8>>|chars])
-  defp string(<<@escape>> <> _data, pos, _chars),
-    do: throw {:string, pos}
-  defp string(<<char>> <> data, pos, chars),
-    do: string(data, pos + 1, [char|chars])
 
   defp list(<<char>> <> data, pos, list)
     when char in @whitespace,

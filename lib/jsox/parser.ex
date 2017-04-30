@@ -47,7 +47,7 @@ defmodule Jsox.Parser do
     do: list(data, pos + 1, [])
   defp json(<<char>> <> data, pos)
     when char == ?{,
-    do: map(data, pos + 1, [])
+    do: map(data, pos + 1, %{}, nil)
   defp json(<<char>> <> data, pos)
     when char in @minus_digits,
     do: number(data, pos + 1, [char], (if char == ?-, do: :minus, else: :digit))
@@ -156,30 +156,29 @@ defmodule Jsox.Parser do
   defp list(_data, pos, _list),
     do: throw{:list, pos}
 
-  defp map(<<char>> <> data, pos, list)
+  defp map(<<char>> <> data, pos, map, key)
     when char in @whitespaces,
-    do: map(data,  pos + 1, list)
-  defp map(<<?}>> <> data, pos, list) do
-    result = for [value, key] <- Enum.chunk(list, 2), into: %{}, do: {key, value}
-    {result, data, pos + 1}
+    do: map(data,  pos + 1, map, key)
+  defp map(<<?}>> <> data, pos, map, _key) do
+    {map, data, pos + 1}
   end
-  defp map(<<?,>> <> _data, pos, []),
+  defp map(<<?,>> <> _data, pos, _map, nil),
     do: throw {:map, pos + 1}
-  defp map(<<?,>> <> data, pos, list) do
+  defp map(<<?,>> <> data, pos, map, _key) do
     {result, data, pos} = key(data, pos + 1)
-    map(data, pos + 1, [result|list])
+    map(data, pos + 1, map, result)
   end
-  defp map(<<?:>> <> _data, pos, []),
+  defp map(<<?:>> <> _data, pos, _map, nil),
     do: throw {:map, pos + 1}
-  defp map(<<?:>> <> data, pos, list) do
+  defp map(<<?:>> <> data, pos, map, key) do
     {result, data, pos} = json(data, pos + 1)
-    map(data, pos + 1, [result|list])
+    map(data, pos + 1, Map.put(map, key, result), key)
   end
-  defp map(data, pos, []) do
+  defp map(data, pos, _map, nil) do
     {result, data, pos} = key(data, pos)
-    map(data, pos, [result])
+    map(data, pos, %{}, result)
   end
-  defp map(_data, pos, _list),
+  defp map(_data, pos, _map, _key),
     do: throw {:map, pos + 1}
 
 end

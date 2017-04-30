@@ -13,7 +13,7 @@ defmodule Jsox.Parser do
   @digits '0123456789'
   @minus_digits '-0123456789'
   @whitespaces '\s\r\t\n'
-  @escapes %{
+  @escape_map %{
     ?\\ => '\\',
     ?" => '\"',
     ?n => '\n',
@@ -21,9 +21,8 @@ defmodule Jsox.Parser do
     ?b => '\b',
     ?f => '\f',
     ?t => '\t',
-    ?/ => '\/'
-  }
-  @escape_chars [?u|Map.keys(@escapes)]
+    ?/ => '\/' }
+  @escape_chars [?u|Map.keys(@escape_map)]
 
   @spec parse(iodata) :: {:ok, json} | {:error, String.t}
   def parse(data) do
@@ -121,7 +120,7 @@ defmodule Jsox.Parser do
   defp string(<<?\\, char>> <> data, pos, chars) when char in @escape_chars do
     cond do
       char == ?u -> unicode(data, pos + 1, chars)
-      true -> string(data, pos + 2, [Map.get(@escapes, char)|chars])
+      true -> string(data, pos + 2, [@escape_map[char]|chars])
     end
   end
   defp string(<<?\\>> <> _data, pos, _chars),

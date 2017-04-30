@@ -86,39 +86,37 @@ defmodule Jsox.Parser do
 
   defp number(<<char>> <> data, pos, chars)
     when char in @digits,
-    do: number(data, pos + 1, [char|chars])
+    do: number(data, pos + 1, [chars,char])
   defp number(<<@full_stop>> <> _data, pos, [@minus_sign]),
     do: throw {:number, pos + 1}
   defp number(<<@full_stop>> <> data, pos, chars),
-    do: float(data, pos + 1, [@full_stop|chars])
+    do: float(data, pos + 1, [chars, @full_stop])
   defp number(<<char>> <> _data, pos, [@minus_sign])
     when char in @exps,
     do: throw {:number, pos}
   defp number(<<char>> <> data, pos, chars)
     when char in @exps,
-    do: exponential(data, pos + 1, [@exp|['.0'|chars]])
+    do: exponential(data, pos + 1, [chars, '.0e'], :exp)
   defp number(_data, pos, [@minus_sign]),
     do: throw {:number, pos}
   defp number(data, pos, chars) do
     result = chars
-             |> Enum.reverse
              |> IO.iodata_to_binary
              |> String.to_integer
     {result, data, pos}
   end
 
-  defp exponential(<<@minus_sign>> <> data, pos, [@exp|_] = chars),
-    do: exponential(data, pos + 1, [@minus_sign|chars])
-  defp exponential(<<char>> <> data, pos, chars)
+  defp exponential(<<@minus_sign>> <> data, pos, chars, :exp),
+    do: exponential(data, pos + 1, [chars, @minus_sign], :minus)
+  defp exponential(<<char>> <> data, pos, chars, _last)
     when char in @digits,
-    do: exponential(data, pos + 1, [char|chars])
-  defp exponential(_data, pos, [@exp|_]),
+    do: exponential(data, pos + 1, [chars, char], :digit)
+  defp exponential(_data, pos, _chars, :exp),
     do: throw {:exponential, pos}
-  defp exponential(_data, pos, [@minus_sign|_]),
+  defp exponential(_data, pos, _chars, :minus),
     do: throw {:exponential, pos}
-  defp exponential(data, pos, chars) do
+  defp exponential(data, pos, chars, _last) do
     result = chars
-        |> Enum.reverse
         |> IO.iodata_to_binary
         |> String.to_float
     {result, data, pos}
@@ -129,13 +127,12 @@ defmodule Jsox.Parser do
     do: throw {:float, pos}
   defp float(<<char>> <> data, pos, chars)
     when char in @exps,
-    do: exponential(data, pos + 1, [@exp|chars])
+    do: exponential(data, pos + 1, [chars, 'e'], :exp)
   defp float(<<char>> <> data, pos, chars)
     when char in @digits,
-    do: float(data, pos + 1, [char|chars])
+    do: float(data, pos + 1, [chars, char])
   defp float(data, pos, chars) do
     result = chars
-             |> Enum.reverse
              |> IO.iodata_to_binary
              |> String.to_float
     {result, data, pos}

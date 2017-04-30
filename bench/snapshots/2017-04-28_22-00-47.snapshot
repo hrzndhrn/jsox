@@ -1,7 +1,0 @@
-duration:1.0;mem stats:false;sys mem stats:false
-module;test;tags;iterations;elapsed
-ParserBench	JSON		2000	1659981
-ParserBench	JSX		5000	2632642
-ParserBench	Jsox		2000	1762249
-ParserBench	Poison		5000	2315862
-ParserBench	jiffy		10000	1366295

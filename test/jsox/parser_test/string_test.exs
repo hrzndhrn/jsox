@@ -32,12 +32,12 @@ defmodule Jsox.ParserTest.StringTest do
 
   test "parsing unicode" do
     assert parse(~S("\u2195")) == {:ok, ~s(\u2195)}
-    assert parse(~S("\u2936")) == {:ok, ~s(⤶)}
-    assert parse(~S("\u2936\u2936")) == {:ok, ~s(⤶⤶)}
+    assert parse(~S("a\u2936b")) == {:ok, ~s(a⤶b)}
+    assert parse(~S("a\u2936\u2936b")) == {:ok, ~s(a⤶⤶b)}
   end
 
   test "parsing surrogate pairs" do
-    assert parse(~S("\uD834\uDD1E")) == {:ok, ~s(𝄞)}
+    assert parse(~S("a\uD834\uDD1Eb")) == {:ok, ~s(a𝄞b)}
   end
 
   test "parsing invalid escape sequence raise an exception" do

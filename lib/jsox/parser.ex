@@ -114,12 +114,8 @@ defmodule Jsox.Parser do
     do: throw {:exponential, pos}
   defp exponential(_data, pos, _chars, :minus),
     do: throw {:exponential, pos}
-  defp exponential(data, pos, chars, _last) do
-    result = chars
-        |> IO.iodata_to_binary
-        |> String.to_float
-    {result, data, pos}
-  end
+  defp exponential(data, pos, chars, _last),
+    do: {chars |> IO.iodata_to_binary |> String.to_float, data, pos}
 
   defp float(<<char>> <> _data, pos, _chars, :full_stop)
     when char in @exps,
@@ -130,19 +126,11 @@ defmodule Jsox.Parser do
   defp float(<<char>> <> data, pos, chars, _last)
     when char in @digits,
     do: float(data, pos + 1, [chars, char], :digit)
-  defp float(data, pos, chars, _last) do
-    result = chars
-             |> IO.iodata_to_binary
-             |> String.to_float
-    {result, data, pos}
-  end
+  defp float(data, pos, chars, _last),
+    do: {chars |> IO.iodata_to_binary |> String.to_float, data, pos}
 
-  defp string(<<@quotation_mark>> <> data, pos, chars) do
-    result = chars
-             |> Enum.reverse
-             |> IO.iodata_to_binary
-    {result, data, pos}
-  end
+  defp string(<<@quotation_mark>> <> data, pos, chars),
+    do: {chars |> Enum.reverse |> IO.iodata_to_binary, data, pos}
   defp string(<<?\\, char>> <> data, pos, chars) when char in @escape_chars do
     cond do
       char == ?u -> unicode(data, pos + 1, chars)

@@ -20,6 +20,20 @@ defmodule Jsox.ParserTest.MapTest do
     assert parse(~s({"a" : { "b" :2 }})) === {:ok, %{"a" => %{"b" => 2}}}
   end
 
+  test "parsing deep nested maps" do
+    input = ~s({"a":1,"z":{"b":2,"y":{"c":3},"d":4},"e":5})
+    expected = %{
+      "a" => 1,
+      "z" => %{
+        "b" => 2,
+        "y" => %{"c" => 3},
+        "d" => 4
+      },
+      "e" => 5
+    }
+    assert parse(input) === {:ok, expected}
+  end
+
   test "get an error for invalid maps" do
     assert parse(~s({ : { })) === {:error, :map, 3}
     assert parse(~s( "b" : 2})) === {:error, :eof, 3}

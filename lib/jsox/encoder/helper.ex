@@ -4,6 +4,8 @@ defmodule Jsox.Encoder.Helper do
 
   use Bitwise
 
+  @compile {:inline, unicode: 1, _map: 1, _map_item: 1}
+
   @escape_map %{
     ?\\ => '\\\\',
     ?\" => '\\"',
@@ -17,36 +19,39 @@ defmodule Jsox.Encoder.Helper do
   def escape(str), do: [?", escape(str, []), ?"]
 
   defp escape("", chars), do: Enum.reverse(chars)
+
   for {char, seq} <- Map.to_list(@escape_map) do
     defp escape(<<unquote(char)>> <> data, chars) do
       escape(data, [unquote(seq)|chars])
     end
   end
 
-  defp escape(<<char>> <> data, chars)
-    when char <= 0x1F or char == 0x7F,
-    do: escape(data, [unicode(char)|chars])
-
-  defp escape(<<char :: utf8>> <> data, chars)
-    when char in 0x80..0x9F,
-    do: escape(data, [unicode(char)|chars])
-
-  defp escape(<<char :: utf8>> <> data, chars)
-    when char in 0xA0..0xFFFF,
-    do: surrogate(data, [unicode(char)|chars])
-
-  defp escape(<<char>> <> data, chars),
-    do: escape(data, [char|chars])
-
-  defp surrogate(<<char>> <> data, chars) when char > 0xFFFF do
-    code = char - 0x10000
-    [unicode(0xD800 ||| (code >>> 10)),
-     unicode(0xDC00 ||| (code &&& 0x3FF))
-     | escape(data, chars)]
+  defp escape(<<char>> <> data, chars) when char <= 0x1F or char == 0x7F do
+    IO.puts(">>>>>>>>>>>>>")
+    IO.inspect(char)
+    escape(data, [unicode(char)|chars])
   end
 
-  defp surrogate(data, chars),
-    do: escape(data, chars)
+  defp escape(<<char :: utf8>> <> data, chars) when char in 0x80..0x9F do
+    escape(data, [unicode(char)|chars])
+  end
+
+  defp escape(<<char :: utf8>> <> data, chars) when char in 0xA0..0xFFFF do
+    escape(data, [unicode(char)|chars])
+  end
+
+  defp escape(<<char :: utf8>> <> data, chars) when char > 0xFFFF do
+    code = char - 0x10000
+    esc = [unicode(0xD800 ||| (code >>> 10)),
+           unicode(0xDC00 ||| (code &&& 0x3FF))]
+
+    escape(data, [esc|chars])
+  end
+
+
+  defp escape(<<char>> <> data, chars) do
+    escape(data, [char|chars])
+  end
 
   defp unicode(char) do
     code = Integer.to_charlist(char, 16)

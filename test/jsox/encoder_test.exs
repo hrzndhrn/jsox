@@ -84,7 +84,6 @@ defmodule Jsox.EncoderTest do
   test "encode unicode",
     do: assert to_json(~s(a⤶b)) == ~S("a\u2936b")
 
-  @tag :skip
   test "encode unicode surrogate",
     do: assert to_json(~s(a𝄞b)) == ~S("a\uD834\uDD1Eb")
 

@@ -3,64 +3,92 @@ defmodule Jsox.EncoderTest do
   use ExUnit.Case, async: true
 
   import Jsox.Encoder
+  import ZZZ.Jsox.Encoder
 
-  test "encode empty string",
-    do: assert encode("") === {:ok, ~s("")}
+  describe "encode atoms" do
+    test "encode true",
+      do: assert to_json(true) === ~s(true)
 
-  test "encode true",
-    do: assert encode(true) === {:ok, ~s(true)}
+    test "encode false",
+      do: assert to_json(false) === ~s(false)
 
-  test "encode false",
-    do: assert encode(false) === {:ok, ~s(false)}
-
-  test "encode nil",
-    do: assert encode(nil) === {:ok, ~s(null)}
+    test "encode nil",
+      do: assert to_json(nil) === ~s(null)
+  end
 
   test "encode integer" do
-    assert encode(-1234) === {:ok, ~S(-1234)}
-    assert encode(-10) === {:ok, ~S(-10)}
-    assert encode(0) === {:ok, ~S(0)}
-    assert encode(10) === {:ok, ~S(10)}
-    assert encode(1234) === {:ok, ~S(1234)}
+    assert to_json(-1234) === ~S(-1234)
+    assert to_json(-10) === ~S(-10)
+    assert to_json(0) === ~S(0)
+    assert to_json(10) === ~S(10)
+    assert to_json(1234) === ~S(1234)
   end
 
   test "encode float" do
-    assert encode(-12.34) === {:ok, ~S(-12.34)}
-    assert encode(12.34) === {:ok, ~S(12.34)}
+    assert to_json(0.0) === ~S(0.0)
+    assert to_json(-12.34) === ~S(-12.34)
+    assert to_json(12.34) === ~S(12.34)
   end
 
+  test "encode empty string",
+    do: assert to_json("") === ~s("")
+
+  test "encode empty string to iodata",
+    do: assert to_json("", iodata: true) === ~s("")
+
   test "encode simple string",
-    do: assert encode("abc") === {:ok, ~S("abc")}
+    do: assert to_json("abc") === ~S("abc")
+
+  test "encode simple string to iodata",
+    do: assert to_json("abc", iodata: true) === [?", 'abc', ?"]
 
   test "encode string conatining \\n",
-    do: assert encode("a\nbc") === {:ok, ~S("a\nbc")}
+    do: assert to_json("a\nbc") === ~S("a\nbc")
 
   test "encode empty list",
-    do: assert encode([]) === {:ok, ~S([])}
+    do: assert to_json([]) === ~S([])
+
+  test "encode list with one element" do
+    assert to_json([1]) === ~S([1])
+    assert to_json(["one"]) === ~S(["one"])
+  end
 
   test "encode list",
-    do: assert encode([1, "abc", 3]) === {:ok, ~S([1,"abc",3])}
+    do: assert to_json([1, "abc", 3]) === ~S([1,"abc",3])
+
+  test "encode [[\"string\"]]",
+    do: assert to_json([["string"]]) === ~S([["string"]])
+
+  test "encode [[\"string\"]] to iodata" do
+    expected = [91, [91, [34, 'string', 34], 93], 93]
+    assert to_json([["string"]], iodata: true) === expected
+  end
 
   test "encode nested list" do
     input = [1, ["abc", 43, [9, 8]], 3]
     expected = ~S([1,["abc",43,[9,8]],3])
-    assert encode(input) === {:ok, expected}
+    assert to_json(input) === expected
   end
 
+  test "encode list with en empty list as element", do:
+    assert to_json(["a", [], 1]) === ~S(["a",[],1])
+
   test "encode empty map",
-    do: assert encode(%{}) == {:ok, ~S({})}
+    do: assert to_json(%{}) == ~S({})
 
   test "encode map",
-    do: assert encode(%{"a" => 1, "b" => "c"}) === {:ok, ~S({"a":1,"b":"c"})}
+    do: assert to_json(%{"a" => 1, "b" => "c"}) === ~S({"a":1,"b":"c"})
 
   test "encode nested map",
-    do: assert encode(%{"a" => %{"b" => "c"}}) === {:ok, ~S({"a":{"b":"c"}})}
+    do: assert to_json(%{"a" => %{"b" => "c"}}) === ~S({"a":{"b":"c"}})
 
   test "encode unicode",
-    do: assert encode(~s(a⤶b)) == {:ok, ~S("a\u2936b")}
+    do: assert to_json(~s(a⤶b)) == ~S("a\u2936b")
 
-  @tag :skip
+  test "zzz encode unicode surrogate",
+    do: assert encode(~s(a𝄞b)) == ~S("a\uD834\uDD1Eb")
+
   test "encode unicode surrogate",
-    do: assert encode(~s(a𝄞b)) == {:ok, ~S("a\uD834\uDD1Eb")}
+    do: assert to_json(~s(a𝄞b)) == ~S("a\uD834\uDD1Eb")
 
 end

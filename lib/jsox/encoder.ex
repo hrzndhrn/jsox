@@ -1,78 +1,69 @@
-defmodule Jsox.Encoder do
+defprotocol Jsox.Encoder do
 
-  use Bitwise
+  def to_json(str, opts \\ [])
 
-  @escape_map %{
-    ?\\ => '\\\\',
-    ?\" => '\\"',
-    ?\n => '\\n',
-    ?\r => '\\r',
-    ?\b => '\\b',
-    ?\f => '\\f',
-    ?\t => '\\t',
-    ?\/ => '\\/' }
+end
 
-  def encode(value), do: {:ok, value |> _encode |> IO.iodata_to_binary}
 
-  defp _encode(""), do: ~s("")
-  defp _encode(true), do: ~s(true)
-  defp _encode(false), do: ~s(false)
-  defp _encode(nil), do: ~s(null)
-  defp _encode(value) when is_integer(value), do: Integer.to_string(value)
-  defp _encode(value) when is_float(value), do: Float.to_string(value)
-  defp _encode(value) when is_binary(value), do: escape(value)
-  defp _encode([]), do: ~s([])
-  defp _encode(value) when is_list(value), do: [?[, list(value, []), ?]]
-  defp _encode(value) when value == %{}, do: ~s({})
-  defp _encode(value) when is_map(value), do: [?{, map(value), ?}]
+defimpl Jsox.Encoder, for: BitString do
 
-  defp list([h], acc), do: Enum.reverse([_encode(h)|acc])
-  defp list([h|t], acc), do: list(t, [[_encode(h), ?,]|acc])
+  alias Jsox.Encoder.Helper
 
-  defp escape(value), do: [?", escape(value, []), ?"]
-  defp escape("", chars), do: Enum.reverse(chars)
-  for {char, seq} <- Map.to_list(@escape_map) do
-    defp escape(<<unquote(char)>> <> data, chars) do
-      escape(data, [unquote(seq)|chars])
-    end
-  end
-  defp escape(<<char>> <> data, chars)
-    when char <= 0x1F or char == 0x7F,
-    do: escape(data, [unicode(char)|chars])
-  defp escape(<<char :: utf8>> <> data, chars)
-    when char in 0x80..0x9F,
-    do: escape(data, [unicode(char)|chars])
-  defp escape(<<char :: utf8>> <> data, chars)
-    when char in 0xA0..0xFFFF,
-    do: surrogate(data, [unicode(char)|chars])
-  defp escape(<<char>> <> data, chars),
-    do: escape(data, [char|chars])
+  def to_json("", _opts), do: ~s("")
 
-  defp surrogate(<<char>> <> data, chars) when char > 0xFFFF do
-    code = char - 0x10000
-    [unicode(0xD800 ||| (code >>> 10)),
-     unicode(0xDC00 ||| (code &&& 0x3FF))
-     | escape(data, chars)]
-  end
-  defp surrogate(data, chars),
-    do: escape(data, chars)
+  def to_json(str, iodata: true), do: str |> Helper.escape
 
-  defp unicode(char) do
-    code = Integer.to_charlist(char, 16)
-    case length(code) do
-      1 -> ["\\u000", code]
-      2 -> ["\\u00", code]
-      3 -> ["\\u0", code]
-      4 -> ["\\u", code]
-    end
-  end
+  def to_json(str, _opts), do: str |> Helper.escape |> IO.iodata_to_binary
 
-  defp map(value),
-    do: value |> _map |> Enum.intersperse(?,)
-  defp _map(map) do
-    for {key, value} <- Map.to_list(map) do
-      [escape(key), ?:, _encode(value)]
-    end
-  end
+end
+
+
+defimpl Jsox.Encoder, for: Atom do
+
+  def to_json(true, _opts), do: ~s(true)
+
+  def to_json(false, _opts), do: ~s(false)
+
+  def to_json(nil, _opts), do: ~s(null)
+
+end
+
+
+defimpl Jsox.Encoder, for: Integer do
+
+  def to_json(value, _opts), do: Integer.to_string(value)
+
+end
+
+
+defimpl Jsox.Encoder, for: Float do
+
+  def to_json(value, _opts), do: Float.to_string(value)
+
+end
+
+
+defimpl Jsox.Encoder, for: List do
+
+  alias Jsox.Encoder.Helper
+
+  def to_json([], _opts), do: ~s([])
+
+  def to_json(list, iodata: true), do: list |> Helper.list
+
+  def to_json(list, _opts), do: list |> Helper.list |> IO.iodata_to_binary
+
+end
+
+
+defimpl Jsox.Encoder, for: Map do
+
+  alias Jsox.Encoder.Helper
+
+  def to_json(map, _opts) when map === %{}, do: ~s({})
+
+  def to_json(map, iodata: true), do: map |> Helper.map
+
+  def to_json(map, _opts), do: map |> Helper.map |> IO.iodata_to_binary
 
 end

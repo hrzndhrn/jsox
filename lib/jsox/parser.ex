@@ -21,7 +21,7 @@ defmodule Jsox.Parser do
     ?b => '\b',
     ?f => '\f',
     ?t => '\t',
-    ?/ => '\/' }
+    ?/ => '\/'}
   @escape_chars [?u|Map.keys(@escape_map)]
 
   @spec parse(iodata) :: {:ok, json} | {:error, String.t}
@@ -71,7 +71,7 @@ defmodule Jsox.Parser do
 
   defp number(<<char>> <> data, pos, chars, _last)
     when char in @digits,
-    do: number(data, pos + 1, [chars,char], :digit)
+    do: number(data, pos + 1, [chars, char], :digit)
   defp number(<<?.>> <> _data, pos, _chars, :minus),
     do: throw {:number, pos + 1}
   defp number(<<?.>> <> data, pos, chars, _last),
@@ -118,9 +118,10 @@ defmodule Jsox.Parser do
   defp string(<<?">> <> data, pos, chars),
     do: {chars |> Enum.reverse |> IO.iodata_to_binary, data, pos}
   defp string(<<?\\, char>> <> data, pos, chars) when char in @escape_chars do
-    cond do
-      char == ?u -> unicode(data, pos + 1, chars)
-      true -> string(data, pos + 2, [@escape_map[char]|chars])
+    if char == ?u do
+      unicode(data, pos + 1, chars)
+    else
+      string(data, pos + 2, [@escape_map[char]|chars])
     end
   end
   defp string(<<?\\>> <> _data, pos, _chars),

@@ -1,11 +1,11 @@
 %{"benchfella": {:hex, :benchfella, "0.3.4", "41d2c017b361ece5225b5ba2e3b30ae53578c57c6ebc434417b4f1c2c94cf4f3", [:mix], [], "hexpm"},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},
-  "credo": {:hex, :credo, "0.7.3", "9827ab04002186af1aec014a811839a06f72aaae6cd5eed3919b248c8767dbf3", [:mix], [{:bunt, "~> 0.2.0", [hex: :bunt, repo: "hexpm", optional: false]}], "hexpm"},
+  "credo": {:hex, :credo, "0.8.0", "187ce36098afef67baa503d0bb3ec047953c88e4c662591371d15ae9ce150119", [:mix], [{:bunt, "~> 0.2.0", [hex: :bunt, repo: "hexpm", optional: false]}], "hexpm"},
   "dialyxir": {:hex, :dialyxir, "0.5.0", "5bc543f9c28ecd51b99cc1a685a3c2a1a93216990347f259406a910cf048d1d7", [:mix], [], "hexpm"},
-  "earmark": {:hex, :earmark, "1.2.0", "bf1ce17aea43ab62f6943b97bd6e3dc032ce45d4f787504e3adf738e54b42f3a", [:mix], [], "hexpm"},
-  "ex_doc": {:hex, :ex_doc, "0.15.1", "d5f9d588fd802152516fccfdb96d6073753f77314fcfee892b15b6724ca0d596", [:mix], [{:earmark, "~> 1.1", [hex: :earmark, repo: "hexpm", optional: false]}], "hexpm"},
+  "earmark": {:hex, :earmark, "1.2.2", "f718159d6b65068e8daeef709ccddae5f7fdc770707d82e7d126f584cd925b74", [:mix], [], "hexpm"},
+  "ex_doc": {:hex, :ex_doc, "0.16.1", "b4b8a23602b4ce0e9a5a960a81260d1f7b29635b9652c67e95b0c2f7ccee5e81", [:mix], [{:earmark, "~> 1.1", [hex: :earmark, repo: "hexpm", optional: false]}], "hexpm"},
   "exjsx": {:git, "https://github.com/talentdeficit/exjsx.git", "2c2b745381f8149bbdefe5b34bd0adeb6cdce041", []},
   "jiffy": {:git, "https://github.com/davisp/jiffy.git", "a13b9e1ec9849a3bc385fdbd42d5de63c6681bf5", []},
-  "json": {:git, "https://github.com/cblage/elixir-json.git", "acadbe360c27fabdd140d53141ba87b3546901f8", []},
+  "json": {:git, "https://github.com/cblage/elixir-json.git", "c65095d23069adf2d4de701875f4053802acfe81", []},
   "jsx": {:hex, :jsx, "2.8.2", "7acc7d785b5abe8a6e9adbde926a24e481f29956dd8b4df49e3e4e7bcc92a018", [:mix, :rebar3], [], "hexpm"},
-  "poison": {:git, "https://github.com/devinus/poison.git", "4f2a543350e510371dea3e1643e0bd6a6b3260c4", []}}
+  "poison": {:git, "https://github.com/devinus/poison.git", "9dd490228f40d52540a642882bf50654f93cb7bf", []}}

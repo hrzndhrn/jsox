@@ -11,7 +11,7 @@ defmodule ParserBench do
   end
 
   bench "Poison" do
-    Poison.Parser.parse!(@json)
+    Poison.decode!(@json)
   end
 
   bench "jiffy" do

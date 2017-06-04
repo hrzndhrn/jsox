@@ -73,3 +73,7 @@ defimpl Jsox.Encoder, for: Any do
   def to_json(%{__struct__: _} = struct, _opts),
     do: struct |> Helper.struct |> IO.iodata_to_binary
 end
+
+defimpl Jsox.Encoder, for: [Time, Date, DateTime, NaiveDateTime] do
+  def to_json(value, _opts), do: ~s["#{@for.to_iso8601(value)}"]
+end

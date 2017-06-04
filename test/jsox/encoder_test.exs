@@ -146,4 +146,29 @@ defmodule Jsox.EncoderTest do
     end
   end
 
+  describe "encode dates and times" do
+    test "encode Date" do
+      {:ok, date} = Date.new(2000, 2, 19)
+
+      assert to_json(date) === ~S("2000-02-19")
+    end
+
+    test "encode NaiveDateTime" do
+      {:ok, date} = NaiveDateTime.new(2000,2,13,23,42,1)
+
+      assert to_json(date) === ~S("2000-02-13T23:42:01")
+    end
+
+    test "encode Time" do
+      {:ok, time} = Time.new(23,12,22,1)
+
+      assert to_json(time) === ~S("23:12:22.000001")
+    end
+
+    test "encode DateTime" do
+      {:ok, date} = DateTime.from_naive(~N[2016-05-24 13:26:08.003], "Etc/UTC")
+
+      assert to_json(date) === ~S("2016-05-24T13:26:08.003Z")
+    end
+  end
 end

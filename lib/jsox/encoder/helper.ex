@@ -4,7 +4,8 @@ defmodule Jsox.Encoder.Helper do
 
   use Bitwise
 
-  @compile {:inline, unicode: 1, _map: 1, _map_item: 1}
+  @compile {:inline, unicode: 1, _map: 1, _map_item: 1, _collection: 1,
+    _collection_item: 1}
 
   @escape_map %{
     ?\\ => '\\\\',
@@ -27,8 +28,6 @@ defmodule Jsox.Encoder.Helper do
   end
 
   defp escape(<<char>> <> data, chars) when char <= 0x1F or char == 0x7F do
-    IO.puts(">>>>>>>>>>>>>")
-    IO.inspect(char)
     escape(data, [unicode(char)|chars])
   end
 
@@ -63,7 +62,8 @@ defmodule Jsox.Encoder.Helper do
     end
   end
 
-  def list([item]), do: [?[, to_json(item, iodata: true) ,?]]
+  def list([item]),
+    do: [?[, to_json(item, iodata: true) ,?]]
 
   def list([head|tail]),
     do: [?[, list(tail, [?,, to_json(head, iodata: true)]), ?]]
@@ -74,15 +74,26 @@ defmodule Jsox.Encoder.Helper do
   defp list([head|tail], acc),
     do: list(tail, [[to_json(head, iodata: true), ?,]|acc])
 
-  def map(map), do: [?{, _map(map), ?}]
+  def map(map),
+    do: [?{, tl(_map(map)), ?}]
 
   defp _map(map),
     do: map
         |> Map.to_list
-        |> Enum.map(&_map_item/1)
-        |> Enum.intersperse(?,)
+        |> Enum.flat_map(&_map_item/1)
 
   defp _map_item({key, value}),
-    do: [escape(key), ?:, to_json(value, iodata: true)]
+    do: [?,, escape(to_string key), ?:, to_json(value, iodata: true)]
+
+  def collection(collection),
+    do: [?[, tl(_collection(collection)), ?]]
+
+  defp _collection(collection),
+    do: Enum.flat_map(collection, &_collection_item/1)
+
+  defp _collection_item(item),
+    do: [?,, to_json(item, iodata: true)]
+
+  def struct(struct), do: struct |> Map.from_struct |> map
 
 end

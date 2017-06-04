@@ -1,4 +1,7 @@
 defmodule Jsox.Encoder.Helper do
+  @moduledoc """
+  A helper module for the encoding.
+  """
 
   import Jsox.Encoder
 
@@ -17,6 +20,7 @@ defmodule Jsox.Encoder.Helper do
     ?\t => '\\t',
     ?\/ => '\\/' }
 
+  @spec escape(String.t) :: iolist()
   def escape(str), do: [?", escape(str, []), ?"]
 
   defp escape("", chars), do: Enum.reverse(chars)
@@ -47,7 +51,6 @@ defmodule Jsox.Encoder.Helper do
     escape(data, [esc|chars])
   end
 
-
   defp escape(<<char>> <> data, chars) do
     escape(data, [char|chars])
   end
@@ -62,6 +65,7 @@ defmodule Jsox.Encoder.Helper do
     end
   end
 
+  @spec list(list) :: iolist
   def list([item]),
     do: [?[, to_json(item, iodata: true) ,?]]
 
@@ -74,6 +78,7 @@ defmodule Jsox.Encoder.Helper do
   defp list([head|tail], acc),
     do: list(tail, [[to_json(head, iodata: true), ?,]|acc])
 
+  @spec map(map) :: iodata
   def map(map),
     do: [?{, tl(_map(map)), ?}]
 
@@ -85,6 +90,7 @@ defmodule Jsox.Encoder.Helper do
   defp _map_item({key, value}),
     do: [?,, escape(to_string key), ?:, to_json(value, iodata: true)]
 
+  @spec collection(Enum.t) :: iodata
   def collection(collection),
     do: [?[, tl(_collection(collection)), ?]]
 
@@ -94,6 +100,7 @@ defmodule Jsox.Encoder.Helper do
   defp _collection_item(item),
     do: [?,, to_json(item, iodata: true)]
 
+  @spec struct(struct()) :: iodata()
   def struct(struct), do: struct |> Map.from_struct |> map
 
 end

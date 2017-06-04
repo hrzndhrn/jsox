@@ -1,7 +1,8 @@
 defmodule Jsox.SyntaxError do
   defexception [:message, :line, :column, :token]
 
-  @spec exception(any) :: any # TODO
+  alias Exception
+
   def exception(opts) do
     pos = opts[:pos]
     iodata = opts[:iodata]

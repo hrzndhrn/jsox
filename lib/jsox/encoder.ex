@@ -1,8 +1,11 @@
 defprotocol Jsox.Encoder do
   @fallback_to_any true
-  def to_json(str, opts \\ [])
-end
 
+  @type json :: String.t
+
+  @spec to_json(any, [iodata: boolean]) :: json | iodata
+  def to_json(any, opts \\ [])
+end
 
 defimpl Jsox.Encoder, for: BitString do
   alias Jsox.Encoder.Helper
@@ -11,7 +14,6 @@ defimpl Jsox.Encoder, for: BitString do
   def to_json(str, iodata: true), do: str |> Helper.escape
   def to_json(str, _opts), do: str |> Helper.escape |> IO.iodata_to_binary
 end
-
 
 defimpl Jsox.Encoder, for: Atom do
   alias Jsox.Encoder.Helper
@@ -42,47 +44,32 @@ defimpl Jsox.Encoder, for: List do
   def to_json(list, _opts), do: list |> Helper.list |> IO.iodata_to_binary
 end
 
-
 defimpl Jsox.Encoder, for: Map do
-
   alias Jsox.Encoder.Helper
 
   def to_json(map, _opts) when map === %{}, do: ~s({})
-
   def to_json(map, iodata: true), do: map |> Helper.map
-
   def to_json(map, _opts), do: map |> Helper.map |> IO.iodata_to_binary
-
 end
 
-
 defimpl Jsox.Encoder, for: Range do
-
   alias Jsox.Encoder.Helper
 
   def to_json(range, _opts),
     do: range |> Helper.collection |> IO.iodata_to_binary
-
 end
 
-
 defimpl Jsox.Encoder, for: MapSet do
-
   alias Jsox.Encoder.Helper
 
   def to_json(map_set, _opts) when map_set == %MapSet{}, do: ~s([])
-
   def to_json(map_set, _opts),
     do: map_set |> Helper.collection |> IO.iodata_to_binary
-
 end
 
-
 defimpl Jsox.Encoder, for: Any do
-
   alias Jsox.Encoder.Helper
 
   def to_json(%{__struct__: _} = struct, _opts),
     do: struct |> Helper.struct |> IO.iodata_to_binary
-
 end

@@ -9,6 +9,7 @@ defmodule Jsox.Mixfile do
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
       deps: deps(),
+      dialyzer: [ignore_warnings: "dialyzer.ignore-warnings"],
 
       # Docs
       name: "Jsox",
@@ -37,6 +38,7 @@ defmodule Jsox.Mixfile do
   defp deps do
     [
       {:credo, "~> 0.7", only: [:dev, :test]},
+      {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.14", only: :dev, runtime: false},
       {:benchfella, "~> 0.3", only: :bench},
       {:poison, github: "devinus/poison", only: :bench},

@@ -1,0 +1,2 @@
+defmodule JsonSchema do
+end

@@ -1,5 +1,5 @@
-defmodule Jsox.JsonSchema.Any do
-  @behaviour Jsox.JsonSchema
+defmodule Jsox.Schema.Any do
+  @behaviour Jsox.Schema
 
   def properties(_), do: nil
 

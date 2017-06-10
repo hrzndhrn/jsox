@@ -1,3 +1,3 @@
-# jsox
+# Jsox
 
 Just another JSON Parser
